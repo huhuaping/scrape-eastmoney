@@ -129,3 +129,25 @@ for (i in 1:page_total) {
   cat("Page ", i, " is done.\n")
 }
 
+## close the driver====
+remDr$closeServer()
+remDr$close()
+rm(remDr)
+gc()
+
+
+## add date column
+## you can specify a custom date
+date_tar <- as.Date("2024-12-19")
+## or default as today's date
+date_tar <- Sys.Date()
+
+tbl_tar <- tbl_tar %>%
+  # add a column of the target date
+  add_column(date = date_tar, .before = 1)
+
+## save csv file to local directory `data/`====
+## create the file name appending with the date of today
+file_name <- glue("funds-flow-{date_tar}.csv")
+write_csv(tbl_tar, here::here("data", file_name))
+
