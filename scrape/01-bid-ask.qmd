@@ -1,0 +1,61 @@
+---
+title: "逐笔委托数据"
+---
+
+整理形成“挂单追踪”数据集`bid-ask`。
+
+## 数据集结构
+
+```{r}
+tbl_demo <- tibble(
+  time="09:15:35", 
+  hour="1h", minute = "5m", second="15s",
+  price = "9.12", funds = "24.5万", 
+  hands = "505", direction = "撤买"
+  )
+```
+
+## 工作流
+
+### 获取挂单图片
+
+软件准备：
+
+- 安装“东方财富”桌面软件，同时需要开通“东方财富”level 2会员。
+
+- 安装抓图软件“FastStone Capture”
+
+抓取流程：
+
+- 东方财富打开个股“分时成交”，打开“逐笔委托”，点击“挂单追踪”，勾选设定“筛选”手数（以成交均价，按10万元计算近似手数）
+
+- 打开抓图软件“FastStone Capture”，点击“捕捉滚动窗口”图标，对个股“挂单追踪”窗口进行截图抓取。
+
+- 保存图片，文件名存为：`(stock_id)-YY-MM-DD.png`（如`603306-2024-12-30.png`）
+
+### 挂单图片文本识别
+
+R代码文件：
+
+```{r}
+"code/OCR-bid-split.R"
+```
+
+技术手段：
+
+- 超大图片文件分块切割：R包`tesseract`
+
+- 图片处理：R包`tesseract`
+
+- 图片识别：R包`tesseract`（需要提前下载中文库）
+
+::: {.callout-note}
+
+`tesseract`中文库:
+
+- you should download the language data manually in the url: <https://www.google.com/url?sa=E&source=gmail&q=https://github.com/tesseract-ocr/tessdata>
+
+- check the data path, and copy the downloaded tesseract data to the path directory
+:::
+
+

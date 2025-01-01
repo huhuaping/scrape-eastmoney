@@ -33,13 +33,119 @@ remDr$maxWindowSize()
 
 
 # scrape website====
-## navigate to the target website
-tbl_stocks <- tribble(
-  ~stock_id, ~stock_name,
-  "603306", "华懋科技"
-) 
+## load stock list====
+##read the json file which contains the stock id, name and date
+source(here("code/00-prepare-json.R"))
 
-q <- 1
+## create url for each stock====
+tbl_url <- tbl_json %>%
+  filter(date==max(date)) %>% # keep only latest date
+  unique() %>%
+  mutate(market_id = ifelse(
+    market=="sz", "0", 
+    ifelse(market == "sh", 1, NA)
+    )
+    ) %>%
+  mutate(
+    url = glue("https://quote.eastmoney.com/f1.html?newcode={market_id}.{stock_id}")
+  )
+# set the target date
+(date_tar <- max(tbl_url$date))
+
+## navigate to the target website
+## loop through the stock list url====
+
+q <-2
+for (q in 1:nrow(tbl_url)) {
+  stock_id <- tbl_url$stock_id[q]
+  stock_name <- tbl_url$stock_name[q]
+  url_tar <- tbl_url$url[q]
+  
+  remDr$navigate(url_tar)
+  Sys.sleep(1)
+  ## get the page source
+  page_source <- remDr$getPageSource()[[1]]
+
+  ## find the total page number
+  ### css selector pattern to find the total page number
+  css_tar <- "#app > div > div > div.stockf1 > div.f1page2 > div > span:nth-child(5)"
+  elm <- remDr$findElement(using = "css selector", value = css_tar)
+  page_total <- elm$getElementText() %>%
+    # extract max page number
+    str_extract(., "(?<=/)\\d+(?=页)") %>%
+    as.numeric()
+  cat(page_total,"\n")
+
+  ## loop through the pages====
+  tbl_tar <- tibble()
+  i <- 1
+  for (i in 1:page_total) {
+    ## get the page source
+    page_source <- remDr$getPageSource()[[1]]
+    Sys.sleep(0.5)
+    tbl_read <- read_html(page_source) %>%
+      html_table()
+    ## obtain numbers of tables
+    n_tbl <- length(tbl_read)
+    
+    ## combind the last four tables
+    tbl_read <- bind_rows(
+      tbl_read[[n_tbl-3]] %>% mutate_all(., as.character), 
+      tbl_read[[n_tbl-2]] %>% mutate_all(., as.character), 
+      tbl_read[[n_tbl-1]] %>% mutate_all(., as.character), 
+      tbl_read[[n_tbl]] %>% mutate_all(., as.character),
+    )
+    
+    ## append the table to the target table
+    tbl_tar <- bind_rows(tbl_tar, tbl_read) 
+    
+    ## find the page fill box and input the page number
+    css_tar <- "input.gotoinput"
+    elm <- remDr$findElement(using = "css selector", value = css_tar)
+    ## clean the input box
+    elm$clearElement()
+    ## input the page number
+    elm$sendKeysToElement(list(as.character(i + 1)))
+    ## click the submit button
+    css_tar <- "form > input[type=submit]:nth-child(2)"
+    elm <- remDr$findElement(using = "css selector", value = css_tar)
+    elm$clickElement()
+    Sys.sleep(0.5)
+    
+    ## print out
+    cat("Page ", i, "of", page_total, " is done.\n")
+  }
+  
+  # tidy table and add columns
+  tbl_tar <- tbl_tar %>%
+    # remove NA rows or empty
+    filter(!is.na(`时间`)) %>%
+    filter(`时间`!="") %>%
+    # add a column of the target date
+    add_column(date = date_tar, .before = 1) %>%
+    # add the stock name and id
+    add_column(stock_name = stock_name, .before = 1) %>%
+    add_column(stock_id = stock_id, .before = 1) 
+  
+  
+  ## save csv file to local directory `data/`====
+  ## create the file name appending with the date of today
+  file_name <- glue("{stock_id}-{date_tar}.csv")
+  cat(file_name,"\n")
+  write_csv(tbl_tar, here::here("data","deal-flow", file_name))
+  
+  cat("Stock",q, ":", stock_id, "(", stock_name, ") of" ,nrow(tbl_url)," is done.\n")
+}
+
+# close the driver====
+remDr$closeServer()
+remDr$close()
+rm(remDr)
+gc()
+
+
+#not use=====
+
 stock_id <- tbl_stocks$stock_id[q]
 stock_name <- tbl_stocks$stock_name[q]
 url_tar <- glue("https://quote.eastmoney.com/f1.html?newcode=1.{stock_id}")
@@ -117,11 +223,6 @@ for (i in 1:page_total) {
   cat("Page ", i, "of", page_total, " is done.\n")
 }
 
-## close the driver====
-remDr$closeServer()
-remDr$close()
-rm(remDr)
-gc()
 
 
 ## add date column

@@ -1,0 +1,76 @@
+project:
+  type: website
+  render: 
+    - "*.qmd"
+  output-dir: _site
+  # post-render:
+  #   - R/copy-post-sync.R
+
+knitr: true
+execute:
+  freeze: auto
+code-fold: true
+code-summary: "Show the code"
+lang: zh
+filters: 
+  - lua/newtablink.lua
+  - lua/linebreak.lua
+
+website:
+  title: "涨跌停分析"
+  favicon: pic/logo/hu-text-removebg.png
+  navbar:
+    left:
+      - href: index.qmd
+        text: 前言
+      #- sidebar:模块
+      - href: nav-theory.qmd
+        text: "理论分析"
+      - href: nav-models.qmd
+        text: "模型实现"
+      - href: nav-scrape.qmd
+        text: "数据获取"
+    right:
+      - icon: stack-overflow
+        text: "主站|Kevin Hu"
+        href: https://www.huhuaping.com
+        target: _blank
+        
+  page-footer:
+    left: "© Copyright 2023 Kevin Hu. Except where otherwise noted, all text and images licensed CC-BY-NC 4.0."
+  
+  sidebar:
+    - title: "理论分析"
+      style: "docked"
+      #background: light
+      collapse-level: 2
+      contents:
+        # navigation items
+        - nav-theory.qmd
+        - theory/background.qmd
+        - theory/mesurement.qmd
+
+    - title: "模型实现"
+      style: "docked"
+      #background: light
+      collapse-level: 2
+      contents:
+        # navigation items
+        - nav-models.qmd
+        - models/01-machine-learning.qmd
+    
+    - title: "数据获取"
+      style: "docked"
+      #background: light
+      collapse-level: 2
+      contents:
+        # navigation items
+        - nav-scrape.qmd
+        - scrape/01-bid-ask.qmd
+        - scrape/02-deal-volume.qmd
+
+format:
+  html:
+    theme: [sandstone, scss/_variables.scss]
+    css: scss/styles.css
+    toc: true

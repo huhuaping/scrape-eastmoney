@@ -125,16 +125,11 @@ for (i in 1:page_total) {
   cat("Page ", i, " is done.\n")
 }
 
-## close the driver====
-remDr$closeServer()
-remDr$close()
-rm(remDr)
-gc()
 
 
 ## add date column
 ## you can specify a custom date
-# date_tar <- as.Date("2024-12-24")
+# (date_tar <- as.Date("2024-12-27"))
 ## or default as today's date
 ( date_tar <- Sys.Date())
 
@@ -148,3 +143,8 @@ file_name <- glue("{date_tar}.csv")
 cat(file_name)
 write_csv(tbl_tar, here::here("data", "funds-flow",file_name))
 
+## close the driver====
+remDr$closeServer()
+remDr$close()
+rm(remDr)
+gc()
