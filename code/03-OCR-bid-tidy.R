@@ -10,7 +10,8 @@ library(lubridate)
 dir_tar <- here("data/bid-ocr")
 files_tar <- list.files(dir_tar)
 paths_tar <- list.files(dir_tar, full.names = TRUE)
-ymd_tar <- ymd(c("2024-12-27", "2024-12-30", "2024-12-31"))
+ymd_tar <- ymd(c("2024-12-26", "2024-12-25", "2024-12-24", "2024-12-23", "2024-12-20"))
+cat(ymd_tar, "/n")
 tbl_read <- tibble(files = files_tar, path = paths_tar) %>%
   mutate(stock_id= str_sub(files, 1, 6),
          date = str_sub(files, 8, 17) %>% ymd()) %>%

@@ -23,7 +23,7 @@ source(here("code/00-prepare-json.R"))
 
 # step 3: load the picture file and preprocess it
 ## we will preprocess pictures day by day
-## date_process <- "2024-12-27"
+## (date_process <- "2024-12-20")
 (date_process <- max(tbl_json$date)) # the latest date
 
 ## now create file path list for all pictures which need to be processed
