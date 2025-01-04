@@ -32,7 +32,18 @@ tbl_file <- tbl_json %>%
   mutate(file_path = here(glue("code/bid/{stock_id}-{date_process}.png"))) 
 
 file_list <- tbl_file %>%
-  pull(file_path)
+  pull(file_path)# %>%
+  #.[1] # only process the first two pictures for testing
+# check files exist or not
+file_exists <- file_list %>% 
+  map(~file.exists(.)) %>% 
+  unlist() 
+if (sum(file_exists) == length(file_list)){
+  cat("All files exist.\n")
+} else {
+  cat("Some files",which(!file_exists), " do not exist.\n")
+}
+# total images need process
 num_image <- length(file_list)
 cat("Total picture files need to be processed: ", num_image, "\n")
 

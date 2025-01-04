@@ -112,3 +112,8 @@ for (i in 1:length(type)) {
   cat("The file ", file_out, " is saved.\n")
 }
 
+## close the driver====
+remDr$closeServer()
+remDr$close()
+rm(remDr)
+gc()

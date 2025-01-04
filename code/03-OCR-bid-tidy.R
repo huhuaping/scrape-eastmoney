@@ -10,8 +10,10 @@ library(lubridate)
 dir_tar <- here("data/bid-ocr")
 files_tar <- list.files(dir_tar)
 paths_tar <- list.files(dir_tar, full.names = TRUE)
-ymd_tar <- ymd(c("2024-12-26", "2024-12-25", "2024-12-24", "2024-12-23", "2024-12-20"))
-cat(ymd_tar, "/n")
+#ymd_tar <- ymd(c("2024-12-26", "2024-12-25", "2024-12-24", "2024-12-23", "2024-12-20"))
+ymd_tar <- c("2025-01-02")
+#ymd_tar <- as.character(lubridate::today())
+cat(ymd_tar, "\n")
 tbl_read <- tibble(files = files_tar, path = paths_tar) %>%
   mutate(stock_id= str_sub(files, 1, 6),
          date = str_sub(files, 8, 17) %>% ymd()) %>%
@@ -19,20 +21,20 @@ tbl_read <- tibble(files = files_tar, path = paths_tar) %>%
   filter(date %in% ymd_tar) %>%
   mutate(data = map(path, read_csv) ) 
 
-tbl_unnest <- tbl_read  %>%
-  select(-path, -files) %>%
-  unnest(data)
+# tbl_unnest <- tbl_read  %>%
+#   select(-path, -files) %>%
+#   unnest(data)
 
 # function for tidy ====
 
 ## demo data set====
-tbl_demo <- tbl_unnest %>%
-  filter(stock_id == "002334")
+# tbl_demo <- tbl_unnest %>%
+#   filter(stock_id == "002334")
 
 ## custom function====
 ## create a function to tidy the data set
 
-tbl_test <- tidy_bid(tbl = tbl_demo)
+# tbl_test <- tidy_bid(tbl = tbl_demo)
 
 tidy_bid <- function(tbl){
   ## tidy the table
@@ -105,8 +107,12 @@ tidy_bid <- function(tbl){
     mutate(
       hh = str_extract(text, "\\d{1,2}(?=h)"), # hours
       mm = str_extract(text, "\\d{1,2}(?=m)"), # minutes
-      ss = str_extract(text, "\\d{1,3}(?=s)")  # seconds, may be wrong ocr "s" to "5"
+      ss = str_extract(text, "\\d{1,3}(?=s)|(?<=m)\\d{1,3}")  #seconds, may be wrong OCR "1m42s" to "1m425"
     ) %>%
+    # correct the "ss" has three digits and extract the first 2 digits
+    mutate(
+      ss = str_extract(ss, "\\d{1,2}")
+    )%>%
     ## create a column to indicate no duration
     mutate(
       no_duration = ifelse(is.na(hh) & is.na(mm) & is.na(ss), TRUE, FALSE)
@@ -146,12 +152,15 @@ tidy_bid <- function(tbl){
     mutate(
       hh = str_extract(duration, "\\d{1,2}(?=h)") %>% as.numeric(),
       mm = str_extract(duration, "\\d{1,2}(?=m)") %>% as.numeric(),
-      ss = str_extract(duration, "\\d{1,3}(?=s)")  # may be wrong OCR "42s" to "425s"
+      # case 1: "m42s", "m425s" which may be wrong OCR "42s" to "425s"
+      # case 2: "425s",
+      # case 3: "42s"
+      ss = str_extract(duration, "(?<=m)\\d{1,2}|\\d{2}(?=\\ds)|\\d{1,2}(?=s)") %>% as.numeric() 
     ) %>%
-    # correct the "ss" has three digits and extract the first 2 digits
-    mutate(
-      ss = str_extract(ss, "\\d{1,2}") %>% as.numeric()
-    ) %>%
+    # # correct the "ss" has three digits and extract the first 2 digits
+    # mutate(
+    #   ss = str_extract(ss, "\\d{1,2}") %>% as.numeric()
+    # ) %>%
     # replace NA to 0 for "hh", "mm", "ss"
     mutate_at(c("hh", "mm", "ss"), replace_na, replace=0) %>%
     # convert columns to numeric
@@ -161,6 +170,7 @@ tidy_bid <- function(tbl){
     filter(!is.na(price)) %>%
     ## columns of funds and hands 
     mutate(
+      #time = str_extract(text, "^\\d{2}:\\d{2}\\d{2}"),
       funds = str_replace(funds, "万", "") %>% str_trim( ) %>%as.numeric(),
       hands = str_trim(hands) %>% as.numeric()
     ) %>%
@@ -173,7 +183,7 @@ tidy_bid <- function(tbl){
       is_expect_funds = ifelse(diff_calc < funds*0.101, TRUE, FALSE)
       ) %>%
     filter(is_expect_funds) %>%
-    select(text, hh, mm, ss, price, funds, hands, direction)
+    select(text, time, hh, mm, ss, price, funds, hands, direction)
   
   return(result)
     
@@ -182,12 +192,15 @@ tidy_bid <- function(tbl){
 # tidy and write tables ====
 ## tidy all raw csv tables
 tbl_tidy <- tbl_read %>%
+  filter(stock_id== "002364") %>%
   ## batch tidy tables
   mutate(dt = map(data, tidy_bid)) 
 ## write out all tidy tables
 (out_dir <- here("data/bid-tidy"))
 tbl_tidy %>%
-  mutate(path_out = glue::glue("{out_dir}/{files}")) %>%
-  mutate(write =map2(.x =dt, .y= path_out, function(x, y) write.csv(x, file = y)))
+  mutate(
+    files_out = str_replace(files, "csv$", "rds"),
+    path_out = glue::glue("{out_dir}/{files_out}")) %>%
+  mutate(write =map2(.x =dt, .y= path_out, function(x, y) write_rds(x, file = y)))
 
 
