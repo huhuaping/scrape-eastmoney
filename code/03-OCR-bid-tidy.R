@@ -192,15 +192,16 @@ tidy_bid <- function(tbl){
 # tidy and write tables ====
 ## tidy all raw csv tables
 tbl_tidy <- tbl_read %>%
-  filter(stock_id== "002364") %>%
+  #filter(stock_id== "002364") %>%
   ## batch tidy tables
   mutate(dt = map(data, tidy_bid)) 
 ## write out all tidy tables
 (out_dir <- here("data/bid-tidy"))
 tbl_tidy %>%
   mutate(
-    files_out = str_replace(files, "csv$", "rds"),
-    path_out = glue::glue("{out_dir}/{files_out}")) %>%
-  mutate(write =map2(.x =dt, .y= path_out, function(x, y) write_rds(x, file = y)))
+    #files_out = str_replace(files, "csv$", "csv"),
+    path_out = glue::glue("{out_dir}/{files}")
+    ) %>%
+  mutate(write =map2(.x =dt, .y= path_out, function(x, y) write_csv(x, file = y)))
 
 

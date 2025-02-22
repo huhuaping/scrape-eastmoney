@@ -5,7 +5,7 @@
 ## step2: read the json file which contains the stock id, name and date
 library(jsonlite)
 library(tidyverse)
-file_json <- here("code/bid/bid-stocks-new.json")
+file_json <- here("data/bid-stocks-new.json")
 # Read the JSON file
 json_data <- fromJSON(file_json)
 

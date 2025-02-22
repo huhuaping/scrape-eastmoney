@@ -26,7 +26,7 @@ library(glue)
 # start the RSelenium====
 ## run local driver
 remDr <- RSelenium::remoteDriver(remoteServerAddr = "localhost",
-                                 port = 4445L,
+                                 port = 5555L,
                                  browserName = "chrome")
 remDr$open()
 remDr$maxWindowSize()
@@ -57,12 +57,15 @@ tbl_url <- tbl_json %>%
 
 q <-2
 for (q in 1:nrow(tbl_url)) {
+  # close browser and to the blank page
+  remDr$navigate("about:blank")
+  Sys.sleep(1)
   stock_id <- tbl_url$stock_id[q]
   stock_name <- tbl_url$stock_name[q]
   url_tar <- tbl_url$url[q]
   
   remDr$navigate(url_tar)
-  Sys.sleep(1)
+  Sys.sleep(3)
   ## get the page source
   page_source <- remDr$getPageSource()[[1]]
 
@@ -82,7 +85,7 @@ for (q in 1:nrow(tbl_url)) {
   for (i in 1:page_total) {
     ## get the page source
     page_source <- remDr$getPageSource()[[1]]
-    Sys.sleep(0.5)
+    Sys.sleep(1)
     tbl_read <- read_html(page_source) %>%
       html_table()
     ## obtain numbers of tables

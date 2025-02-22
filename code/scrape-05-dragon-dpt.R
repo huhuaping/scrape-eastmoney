@@ -1,11 +1,11 @@
-# 使用RSelenium+docker抓取东方财富网站的龙虎榜股票池数据
+# 使用RSelenium+docker抓取东方财富网站的龙虎榜每日活跃营业部数据
 # 数据来源：东方财富
-# 数据集：日度龙虎榜股票池数据集`dragon-pool`
-# 抓取流程：抓取每日龙虎榜个股名单。此为常规操作，可以根据需要每周抓取一次。
-#  - 进入龙虎榜数据中心<https://data.eastmoney.com/stock/tradedetail.html>
+# 数据集：每日活跃营业部数据集`dragon-dpt`
+# 抓取流程：抓取每每日活跃营业部表格数据。此为常规操作，可以根据需要每周抓取一次。
+#  - 进入龙虎榜数据中心<https://data.eastmoney.com/stock/hyyyb.html>
 #  - 设定日期。点击**自定义区间**
-#  - 按日期抓取表格
-#  - 保存到`data/dragon-pool/`目录下
+#  - 按日期抓取表格数据
+#  - 保存到`data/dragon-dpt/`目录下
 
 # 1. 加载必要的包
 library(RSelenium)
@@ -21,7 +21,7 @@ library(jsonlite)
 # 2. 启动docker
 ## run docker service and container
 ## you should run and start docker desktop first.
-## then run code in 'window power shell': docker run --name chrome2 -v /dev/shm:/dev/shm -d -p 4445:4444 -p 5901:5900 selenium/standalone-chrome-debug:latest
+## then run code in 'window power shell': docker run --name chrome -v /dev/shm:/dev/shm -d -p 4445:4444 -p 5901:5900 selenium/standalone-chrome-debug:latest
 
 ### for firefox: docker run --name firefox -v /dev/shm:/dev/shm -d -p 4445:4444 -p 5901:5900 selenium/standalone-firefox:latest
 
@@ -32,11 +32,12 @@ library(jsonlite)
 
 # 2. 连接selenium====
 remDr <- remoteDriver(remoteServerAddr = "localhost",
-                       port = 5555L,
-                       browserName = "chrome")
+                      port = 5555L,
+                      browserName = "chrome")
 
 remDr$open()
 remDr$maxWindowSize()
+
 
 # 3. 读取法定节假日json数据====
 ## 3.1 读取json数据
@@ -58,7 +59,7 @@ tbl_holiday <- json_data %>%
 
 # 4. 设定目标日期====
 date_start <- ymd("2024-01-01")
-date_end <- ymd("2024-09-30")
+date_end <- ymd("2024-01-31")
 #list_holiday <- NA
 tbl_date <- tibble(date = as.Date(date_start:date_end)) %>%
   mutate(
@@ -75,21 +76,21 @@ tbl_date <- tibble(date = as.Date(date_start:date_end)) %>%
 # 5. 抓取龙虎榜日度榜单数据====
 
 ## loop all dates
-k <- 29
-for (k in 124:nrow(tbl_date)){
+k <- 1
+for (k in 1:nrow(tbl_date)){
   cat(glue("begin {k} of total {nrow(tbl_date)} \n"))
   
   ## 5.0 设定目标日期====
   target_date <- as.character(tbl_date$date[k])
   ## 5.1 进入龙虎榜数据中心====
-  url_tar <- "https://data.eastmoney.com/stock/tradedetail.html"
+  url_tar <- "https://data.eastmoney.com/stock/hyyyb.html"
   remDr$navigate(url_tar)
   Sys.sleep(2)
   
   ## 5.2 设定日期====
   ## 点击自定义区间
   #css_tar <- "li.tagRange"
-  css_tar <- "body > div:nth-child(2) > div.main-content > div.content > div:nth-child(3) > ul > li.tagRange"
+  css_tar <- "body > div:nth-child(2) > div.main-content > div.content > div.cateday > ul > li.tagRange"
   elm <- remDr$findElement(using = "css", value = css_tar)
   Sys.sleep(2)
   elm$clickElement()
@@ -134,6 +135,7 @@ for (k in 124:nrow(tbl_date)){
   
   ## 5.5 点击查询====
   css_tar <- "div.search_btn"
+  #"body > div:nth-child(2) > div.main-content > div.content > div.cateday > ul > li:nth-child(7) > div > div.search_btn"
   elm <- remDr$findElement(using = "css", value = css_tar)
   elm$clickElement()
   Sys.sleep(1)
@@ -173,7 +175,7 @@ for (k in 124:nrow(tbl_date)){
     total_pages <- page_total
   }
   
-  #i <- 3
+  #i <- 1
   for (i in 1:total_pages) {
     # case of multiple page
     if (page_total != 999) {
@@ -196,19 +198,114 @@ for (k in 124:nrow(tbl_date)){
     page <- remDr$getPageSource()[[1]]
     Sys.sleep(1)
     page <- read_html(page)
+    ## abtain the attributes of the table
+    ### attribute "href" form the table's link
+    # 3. CSS Selector for the table
+    table_selector <- "div.dataview-body>table"
     
-    ## read table
+    # 4. JavaScript function to extract hrefs from table cells
+    extractTableHrefsJS <- function(table_selector) {
+      js_code <- sprintf(
+        '
+        var table = document.querySelector("%s");
+         if (!table) {
+             console.error("Table not found using selector: %s");
+             return null;
+         }
+         var rows = table.querySelectorAll("tbody tr");
+        if(!rows || rows.length == 0){
+            console.error("No rows found in the table.")
+            return null;
+         }
+         var result = [];
+         for (var i = 0; i < rows.length; i++) {
+             var row = rows[i];
+             var cells = row.querySelectorAll("td");
+             var rowData = [];
+             for (var j = 0; j < cells.length; j++) {
+                 var cell = cells[j];
+                 var links = cell.querySelectorAll("a");
+                 var cellHrefs = [];
+                 for (var k = 0; k < links.length; k++) {
+                     cellHrefs.push(links[k].getAttribute("href"));
+                 }
+                rowData.push(cellHrefs);
+             }
+            result.push(rowData);
+        }
+         return result;
+        ',
+        table_selector,
+        table_selector
+      )
+      return(js_code)
+    }
+    
+    js_script <- extractTableHrefsJS(table_selector)
+    # 5. Execute the Javascript and get results
+    tryCatch({
+      table_hrefs <- remDr$executeScript(js_script)
+    },
+    error = function(e){
+      print(paste("JavaScript error: ", e$message))
+    }
+    )
+    # 6. Process results (if any)
+    if(!is.null(table_hrefs)){
+      if(length(table_hrefs[[1]]) > 0){
+        print("hrefs extracted from the table:")
+        ##  extract the `dpt` hrefs into a data frame
+        df_dpt <- lapply(table_hrefs, function(row){
+          lapply(row[[2]], function(cell){
+            paste(cell,collapse = "; ")
+          }) %>% unlist()
+        }) %>% 
+          as.data.frame() %>% 
+          t() %>%
+          as_tibble() %>%
+          rename_all(., ~c("href_dpt")) %>%
+          mutate(href_dpt = str_extract(href_dpt, "\\d{1,20}(?=\\.html)") )
+        
+        ##  extract the `stock` hrefs into a data frame
+        df_stock <- lapply(table_hrefs, function(row){
+          lapply(row[[10]], function(cell){
+            paste(cell,collapse = "; ")
+          }) 
+        }) %>%
+          lapply(
+            ., function(row) {
+              row %>% 
+                str_extract_all("\\d{1,20}(?=\\.html)") %>% 
+                unlist() %>%
+                paste0(., collapse = "; ")
+            }
+                 ) %>%
+          as.data.frame() %>% 
+          t() %>%
+          as_tibble() %>%
+          rename_all(., ~c("href_stock"))
+        ## combine the two data frames
+        tbl_href <- cbind(df_dpt, df_stock)
+        
+      }else{
+        print("No href found in the table.")
+      }
+    }
+    
+    ## read table and cbind the tbl_href
     tbl_read <- page %>% 
       html_table() %>%
-      .[[2]]
+      .[[2]] %>%
+      as_tibble() %>%
+      bind_cols(., tbl_href)
     ## append to all
     tbl_all <- rbind(tbl_all, tbl_read)
     cat("Page ", i, " is done.\n")
   }
   
   # 7. 保存数据====
-  ## save csv files to "data/dragon-pool/"
-  dir_out <- here("data", "dragon-pool")
+  ## save csv files to "data/dragon-dpt/"
+  dir_out <- here("data", "dragon-dpt")
   if (!dir.exists(dir_out)) {
     dir.create(dir_out, recursive = TRUE)
   }
@@ -228,9 +325,9 @@ for (k in 124:nrow(tbl_date)){
 }
 
 # close the driver====
-# remDr$closeServer()
-# remDr$close()
-# rm(remDr)
-# gc()
+remDr$closeServer()
+remDr$close()
+rm(remDr)
+gc()
 
 

@@ -35,7 +35,7 @@ library(glue)
 
 # local server
 remDr <- RSelenium::remoteDriver(remoteServerAddr = "localhost",
-                                 port = 4445L,
+                                 port = 5555L,
                                  browserName = "chrome")
 remDr$open()
 
@@ -55,7 +55,7 @@ type <- list(
   )
 
 ## select the target date
-#target_date <- ymd("2024-12-27")
+#target_date <- ymd("2025-01-23")
 (target_date <- Sys.Date())
 # loop through the list of stock type pools
 # i <- 4
@@ -63,7 +63,7 @@ for (i in 1:length(type)) {
   type_tar <- type[i]
   ## create a list of urls
   url_tar <- glue("https://quote.eastmoney.com/ztb/detail#type={type_tar}")
-  Sys.sleep(1)
+  Sys.sleep(2)
   ## navigate to the target website
   remDr$navigate(url_tar)
   
@@ -91,7 +91,7 @@ for (i in 1:length(type)) {
   elm <- remDr$findElement(using = "xpath", value = xpath_tar)
   # elm$getElementAttribute("text")[1] 
   elm$clickElement()
-  Sys.sleep(1)
+  Sys.sleep(2)
   ## get the page source
   page_source <- remDr$getPageSource()[[1]]
   tbl_read <- read_html(page_source) %>%
@@ -112,7 +112,7 @@ for (i in 1:length(type)) {
   cat("The file ", file_out, " is saved.\n")
 }
 
-## close the driver====
+# close the driver====
 remDr$closeServer()
 remDr$close()
 rm(remDr)

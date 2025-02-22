@@ -1,0 +1,63 @@
+---
+title: "抓取技术"
+---
+
+本文主要记录使用RSelenium + docker 进行网页数据爬取中的一些具体实现技术技巧及注意事项。
+
+## RSelenium
+
+### 清空文本输入框，需要注意其生成机制
+
+
+```{r}
+#| eval: false
+#| echo: true
+
+# try to clear the date picker's text input box
+css_tar <- "input.date-search"
+elm <- remDr$findElement(using = "css", value = css_tar)
+# option 1: empty characters
+remDr$sendKeysToElement(list(""))
+# option 2: javascript
+remDr$executeScript("arguments[0].value = '';", list(elm))
+```
+
+上述两种方法点评：
+
+- 第一种方法可能会无效，很可能是因为该文本输入框是基于JavaScript生成的。因此RSelenium无法获得对该elm的操作。
+
+- 第二种方法直接使用JavaScript命令强制赋予文本框为空文本。因此对于JavaScript生成的文本输入框是有效操作的。
+
+
+### element无法识别，需要注意网页缓存
+
+chrome driver可能因为内部自带的网页缓存功能，而导致element无法被识别到。可以考虑直接打开空白页面，然后再次进入目标网页。
+
+```{r}
+#| eval: false
+#| echo: true
+
+# close browser and to the blank page
+remDr$navigate("about:blank")
+# navigate to target webpage again
+url_tar <- "https://data.eastmoney.com/stock/tradedetail.html"
+remDr$navigate(url_tar)
+```
+
+### 识别element是否存在
+
+```{r}
+#| eval: false
+#| echo: true
+
+## html source and the page numbers' selector: 
+css_tar <- "div.pagerbox >a"
+## check element exist
+if (length(html_nodes(page, css_tar)) == 0) {
+  cat("No data for ", target_date, "\n")
+  warning("No paganation for ", target_date, "\n")
+  page_total <- 999
+} 
+```
+
+

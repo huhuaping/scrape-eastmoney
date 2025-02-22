@@ -37,7 +37,7 @@ library(glue)
 
 # local server
 remDr <- RSelenium::remoteDriver(remoteServerAddr = "localhost",
-                                 port = 4445L,
+                                 port = 5555L,
                                  browserName = "chrome")
 remDr$open()
 
@@ -129,7 +129,7 @@ for (i in 1:page_total) {
 
 ## add date column
 ## you can specify a custom date
-# (date_tar <- as.Date("2024-12-27"))
+# (date_tar <- as.Date("2025-01-23"))
 ## or default as today's date
 ( date_tar <- Sys.Date())
 

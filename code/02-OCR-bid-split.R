@@ -21,15 +21,18 @@ library(jsonlite)
 source(here("code/00-prepare-json.R"))
 
 
+
 # step 3: load the picture file and preprocess it
 ## we will preprocess pictures day by day
 ## (date_process <- "2024-12-20")
 (date_process <- max(tbl_json$date)) # the latest date
-
+## sequence of date from 2025-01-07 to 2025-01-10
+(date_process <- as.character(seq(as.Date("2025-01-11"), as.Date("2025-01-16"), by = "day"))
+)
 ## now create file path list for all pictures which need to be processed
 tbl_file <- tbl_json %>%
-  filter(date == date_process) %>%
-  mutate(file_path = here(glue("code/bid/{stock_id}-{date_process}.png"))) 
+  filter(date %in% date_process) %>%
+  mutate(file_path = here(glue("code/bid/{stock_id}-{date}.png"))) 
 
 file_list <- tbl_file %>%
   pull(file_path)# %>%
