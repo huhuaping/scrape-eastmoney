@@ -57,8 +57,8 @@ tbl_holiday <- json_data %>%
   rename("holiday" = "name") 
 
 # 4. 设定目标日期====
-date_start <- ymd("2024-01-01")
-date_end <- ymd("2024-09-30")
+date_start <- ymd("2025-01-01")
+date_end <- ymd("2025-01-15")
 #list_holiday <- NA
 tbl_date <- tibble(date = as.Date(date_start:date_end)) %>%
   mutate(
@@ -76,7 +76,7 @@ tbl_date <- tibble(date = as.Date(date_start:date_end)) %>%
 
 ## loop all dates
 k <- 29
-for (k in 124:nrow(tbl_date)){
+for (k in 1:nrow(tbl_date)){
   cat(glue("begin {k} of total {nrow(tbl_date)} \n"))
   
   ## 5.0 设定目标日期====
