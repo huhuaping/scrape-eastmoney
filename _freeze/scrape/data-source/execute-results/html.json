@@ -1,0 +1,15 @@
+{
+  "hash": "4dff1fe9f7ef99a07b99d143e5b9e352",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"数据集\"\nexecute:\n  echo: false\n  warning: false\n  message: false\n---\n\n::: {.cell}\n\n:::\n\n\n\n\n## 个股挂单数据\n\n\n## 资金流数据\n\n\n## 涨跌停数据\n\n\n## 龙虎榜数据：每日龙虎榜个股名单（已执行）\n\n### 数据说明\n\n数据来源：东方财富\n\n\n\n\n::: {.cell}\n\n:::\n\n\n\n\n数据集：\n\n- 日度龙虎榜股票池数据集`dragon-pool`\n\n- 最新抓取的文件：2024-12-31.csv， 最早抓取的文件：2024-01-02.csv\n\n下面展示`data/dragon-pool/`目录下的文件结构（最近抓取的10个文件）：\n\n\n\n::: {.cell}\n::: {.cell-output .cell-output-stdout}\n\n```\nD:/github/scrape-eastmoney/data/dragon-pool\n├── 2024-12-18.csv\n├── 2024-12-19.csv\n├── 2024-12-20.csv\n├── 2024-12-23.csv\n├── 2024-12-24.csv\n├── 2024-12-25.csv\n├── 2024-12-26.csv\n├── 2024-12-27.csv\n├── 2024-12-30.csv\n└── 2024-12-31.csv\n```\n\n\n:::\n:::\n\n\n\n\n\n### 抓取流程\n\n\n抓取每日龙虎榜个股名单。此为常规操作，可以根据需要每周抓取一次。\n\n- 进入龙虎榜数据中心<https://data.eastmoney.com/stock/tradedetail.html>\n\n- 设定日期。点击**自定义区间**\n\n- 按日期抓取表格\n\n- 保存到`data/dragon-pool/`\n\n### 抓取代码\n\n\"code/scrape-04-dragon-pool.R\"\n\n\n## 龙虎榜数据：个股龙虎榜详细数据（未执行）\n\n### 数据说明\n\n- 个股龙虎榜数据集`dragon-stock`\n\n\n\n\n\n::: {.cell}\n::: {.cell-output .cell-output-stdout}\n\n```\nD:/github/scrape-eastmoney/data/dragon-stock\n```\n\n\n:::\n:::\n\n\n\n\n### 抓取流程\n\n抓取目标个股的龙虎榜上榜详细数据。此为目标操作，根据目标个股需要进行抓取。\n\n- 根据龙虎榜数据集，过滤目标个股的上榜日期。\n\n- 根据上榜日期，构造出个股龙虎榜详细数据网页的网址\n\n    - 诸如： `https://data.eastmoney.com/stock/lhb,{2025-01-03},{000533}.html`\n\n- 进入上述个股龙虎榜网址，抓取其详细数据集\n\n- 保存到`data/dragon-stock/`\n\n\n### 抓取代码\n\n暂无\n\n\n## 龙虎榜数据：机构买卖每日统计（未执行）\n\n### 数据说明\n\n数据来源：东方财富\n\n数据集：\n\n- 机构买卖每日统计`dragon-inst`\n\n\n### 抓取流程\n\nurl: <https://data.eastmoney.com/stock/hyyyb.html>\n\n保存到`data/dragon-inst/`\n\n### 抓取代码\n\n暂无\n\n## 龙虎榜数据：每日活跃营业部（已执行）\n\n### 数据说明\n\n\n\n\n::: {.cell}\n\n:::\n\n\n\n\n- 每日活跃营业部`dragon-dpt`\n\n- 最新抓取的文件：2024-01-31.csv， 最早抓取的文件：2024-01-02.csv\n\n- 下面展示`data/dragon-dpt/`目录下的文件结构（最近抓取的10个文件）：\n\n\n\n\n::: {.cell}\n::: {.cell-output .cell-output-stdout}\n\n```\nD:/github/scrape-eastmoney/data/dragon-dpt\n├── 2024-01-18.csv\n├── 2024-01-19.csv\n├── 2024-01-22.csv\n├── 2024-01-23.csv\n├── 2024-01-24.csv\n├── 2024-01-25.csv\n├── 2024-01-26.csv\n├── 2024-01-29.csv\n├── 2024-01-30.csv\n└── 2024-01-31.csv\n```\n\n\n:::\n:::\n\n\n\n\n### 抓取流程\n\n保存到`data/dragon-dpt/`\n\n### 抓取代码\n\n\"code/scrape-05-dragon-dpt.R\"\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

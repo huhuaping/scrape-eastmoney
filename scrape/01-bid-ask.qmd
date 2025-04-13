@@ -2,6 +2,21 @@
 title: "逐笔委托数据"
 ---
 
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# 加载必要的包
+library(tidyverse)
+library(magrittr)
+library(here)
+library(glue)
+library(rvest)
+
+```
+
+
 整理形成“挂单追踪”数据集`bid-ask`。
 
 ## 数据集结构
@@ -38,7 +53,9 @@ tbl_demo <- tibble(
 R代码文件：
 
 ```{r}
-"code/OCR-bid-split.R"
+#| echo: false
+
+"code/02-OCR-bid-split.R"
 ```
 
 技术手段：

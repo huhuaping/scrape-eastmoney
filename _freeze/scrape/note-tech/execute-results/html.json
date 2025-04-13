@@ -1,0 +1,15 @@
+{
+  "hash": "cc4252409507778037bc9888170a2be2",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"抓取技术\"\n---\n\n\n\n\n本文主要记录使用RSelenium + docker 进行网页数据爬取中的一些具体实现技术技巧及注意事项。\n\n## RSelenium\n\n### 清空文本输入框，需要注意其生成机制\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# try to clear the date picker's text input box\ncss_tar <- \"input.date-search\"\nelm <- remDr$findElement(using = \"css\", value = css_tar)\n# option 1: empty characters\nremDr$sendKeysToElement(list(\"\"))\n# option 2: javascript\nremDr$executeScript(\"arguments[0].value = '';\", list(elm))\n```\n:::\n\n\n\n\n上述两种方法点评：\n\n- 第一种方法可能会无效，很可能是因为该文本输入框是基于JavaScript生成的。因此RSelenium无法获得对该elm的操作。\n\n- 第二种方法直接使用JavaScript命令强制赋予文本框为空文本。因此对于JavaScript生成的文本输入框是有效操作的。\n\n\n### element无法识别，需要注意网页缓存\n\nchrome driver可能因为内部自带的网页缓存功能，而导致element无法被识别到。可以考虑直接打开空白页面，然后再次进入目标网页。\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# close browser and to the blank page\nremDr$navigate(\"about:blank\")\n# navigate to target webpage again\nurl_tar <- \"https://data.eastmoney.com/stock/tradedetail.html\"\nremDr$navigate(url_tar)\n```\n:::\n\n\n\n\n### 识别element是否存在\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n## html source and the page numbers' selector: \ncss_tar <- \"div.pagerbox >a\"\n## check element exist\nif (length(html_nodes(page, css_tar)) == 0) {\n  cat(\"No data for \", target_date, \"\\n\")\n  warning(\"No paganation for \", target_date, \"\\n\")\n  page_total <- 999\n} \n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

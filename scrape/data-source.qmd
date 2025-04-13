@@ -1,7 +1,19 @@
 ---
-title: "数据集抓取流程"
+title: "数据集"
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
+```{r}
+#| echo: false
+library(tidyverse)
+library(here)
+library(glue)
+library(magrittr)
+library(fs)
+```
 
 ## 个股挂单数据
 
@@ -12,27 +24,43 @@ title: "数据集抓取流程"
 ## 涨跌停数据
 
 
-## 龙虎榜数据1
+## 龙虎榜数据：每日龙虎榜个股名单（已执行）
 
 ### 数据说明
 
 数据来源：东方财富
 
+```{r}
+#| echo: false
+dir_tar <- here("data/dragon-pool")
+files <- fs::dir_ls(dir_tar)
+
+# 最近10个文件
+last_10_files <- tail(files, 10)
+
+# 最近的文件
+last_file <- tail(files, 1)
+# 最早的文件
+first_file <- head(files, 1)
+```
+
 数据集：
 
 - 日度龙虎榜股票池数据集`dragon-pool`
 
-- 个股龙虎榜数据集`dragon-stock`
+- 最新抓取的文件：`r basename(last_file)`， 最早抓取的文件：`r basename(first_file)`
 
-- 机构买卖每日统计`dragon-inst`
-
-- 每日活跃营业部`dragon-dpt`
+下面展示`data/dragon-pool/`目录下的文件结构（最近抓取的10个文件）：
+```{r}
+#| echo: false
+fs::dir_tree(dir_tar, regexp = paste(basename(last_10_files), collapse = "|"))
+```
 
 
 ### 抓取流程
 
 
-（1）抓取每日龙虎榜个股名单。此为常规操作，可以根据需要每周抓取一次。
+抓取每日龙虎榜个股名单。此为常规操作，可以根据需要每周抓取一次。
 
 - 进入龙虎榜数据中心<https://data.eastmoney.com/stock/tradedetail.html>
 
@@ -42,7 +70,27 @@ title: "数据集抓取流程"
 
 - 保存到`data/dragon-pool/`
 
-（2）抓取目标个股的龙虎榜上榜详细数据。此为目标操作，根据目标个股需要进行抓取。
+### 抓取代码
+
+"code/scrape-04-dragon-pool.R"
+
+
+## 龙虎榜数据：个股龙虎榜详细数据（未执行）
+
+### 数据说明
+
+- 个股龙虎榜数据集`dragon-stock`
+
+
+```{r}
+#| echo: false
+dir_tar <- here("data/dragon-stock")
+fs::dir_tree(dir_tar)
+```
+
+### 抓取流程
+
+抓取目标个股的龙虎榜上榜详细数据。此为目标操作，根据目标个股需要进行抓取。
 
 - 根据龙虎榜数据集，过滤目标个股的上榜日期。
 
@@ -55,8 +103,12 @@ title: "数据集抓取流程"
 - 保存到`data/dragon-stock/`
 
 
+### 抓取代码
 
-## 龙虎榜数据2
+暂无
+
+
+## 龙虎榜数据：机构买卖每日统计（未执行）
 
 ### 数据说明
 
@@ -66,9 +118,50 @@ title: "数据集抓取流程"
 
 - 机构买卖每日统计`dragon-inst`
 
-- 每日活跃营业部`dragon-dpt`
 
 ### 抓取流程
 
 url: <https://data.eastmoney.com/stock/hyyyb.html>
 
+保存到`data/dragon-inst/`
+
+### 抓取代码
+
+暂无
+
+## 龙虎榜数据：每日活跃营业部（已执行）
+
+### 数据说明
+
+```{r}
+#| echo: false
+dir_tar <- here("data/dragon-dpt")
+files <- fs::dir_ls(dir_tar)
+
+# 最近10个文件
+last_10_files <- tail(files, 10)
+
+# 最近的文件
+last_file <- tail(files, 1)
+# 最早的文件
+first_file <- head(files, 1)
+```
+
+- 每日活跃营业部`dragon-dpt`
+
+- 最新抓取的文件：`r basename(last_file)`， 最早抓取的文件：`r basename(first_file)`
+
+- 下面展示`data/dragon-dpt/`目录下的文件结构（最近抓取的10个文件）：
+
+```{r}
+#| echo: false
+fs::dir_tree(dir_tar, regexp = paste(basename(last_10_files), collapse = "|"))
+```
+
+### 抓取流程
+
+保存到`data/dragon-dpt/`
+
+### 抓取代码
+
+"code/scrape-05-dragon-dpt.R"

@@ -17,7 +17,7 @@ filters:
   - lua/linebreak.lua
 
 website:
-  title: "涨跌停分析"
+  title: "东方财富爬虫分析"
   favicon: pic/logo/hu-text-removebg.png
   navbar:
     left:
@@ -66,6 +66,8 @@ website:
       contents:
         # navigation items
         - nav-scrape.qmd
+        - scrape/data-source.qmd
+        - scrape/note-tech.qmd
         - scrape/01-bid-ask.qmd
         - scrape/02-deal-volume.qmd
 
