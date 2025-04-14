@@ -9,6 +9,9 @@ project:
 knitr: true
 execute:
   freeze: auto
+  echo: false
+  warning: false
+  message: false
 code-fold: true
 code-summary: "Show the code"
 lang: zh
@@ -58,6 +61,9 @@ website:
         # navigation items
         - nav-models.qmd
         - models/01-machine-learning.qmd
+        - section: "龙虎榜分析"
+          contents:
+            - models/eda-dragon-tariffs.qmd
     
     - title: "数据获取"
       style: "docked"
