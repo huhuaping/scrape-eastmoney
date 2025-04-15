@@ -1,4 +1,5 @@
-# 爬取券商营业部基本信息
+# 爬取券商营业部基本信息(营业部查询)
+## 特别说明：本方法爬取的营业部信息相对更少！而`scrape-brokers-by-yybph.R`爬取的营业部信息要更全更多。
 ## 目标网站：https://data.eastmoney.com/stock/yybcx.html
 ## 目标数据集：券商营业部基本信息`brokers`
 ## 目标字段：

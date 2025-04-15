@@ -13,6 +13,8 @@ library(here)
 library(glue)
 library(magrittr)
 library(fs)
+library(DT)
+library(kableExtra)
 ```
 
 ## 个股挂单数据
@@ -22,6 +24,120 @@ library(fs)
 
 
 ## 涨跌停数据
+
+## 券商营业部数据集
+
+### 数据说明
+
+- 券商营业部数据集`data/brokers-yybph.rds`
+
+- 数据来源：东方财富龙虎榜营业部排行<https://data.eastmoney.com/stock/yybph.html>
+
+目标字段：
+
+- 营业部名称(name)
+- 营业部代码(id)
+
+### 抓取流程：
+
+采用Selenium+docker方式进行爬取
+
+1. 打开目标网站
+2. 获取所有营业部信息
+3. 提取目标字段
+4. 保存为brokers-yybph.rds文件
+
+### 抓取代码
+
+- 抓取代码："code/scrape-brokers-by-yybph.R"
+- 导出数据："data/brokers-yybph.rds"
+
+### 数据集展示
+
+```{r}
+#| echo: false
+file_tar <- here("data/brokers-yybph.rds")
+df_brokers <- readRDS(file_tar)
+df_brokers %>%
+  select(name, id) %>%
+  .[c(1:10, (nrow(.)-9):nrow(.)), ] %>%
+  kbl(caption = "券商营业部信息表（东方财富）") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+
+## 机构和游资席位信息集
+
+### 数据说明
+
+- 机构和游资席位信息集`data/large-actor.rds`
+
+- 数据来源：东方财富、同花顺桌面版
+
+1. 机构识别：比较容易识别。
+
+- 营业部名称以“机构专用”开头（机构专用席位，比较复杂，暂无席位id）
+- 营业部名称以“深股通”开头（深股通席位，有席位id）
+- 营业部名称以“沪股通”开头（沪股通席位，有席位id）
+
+机构专用席位指的是基金、保险、社保等机构投资者使用的交易通道，这些席位不公开具体名称，只显示为“机构专用”。具体席位包括：
+
+- 公募基金：通过专用通道交易的公募基金产品。
+- 私募基金：部分大型私募基金可能使用机构席位。
+- 社保基金、保险资金：社保组合、保险资管产品等。
+- QFII/RQFII：合格境外机构投资者的交易通道。
+- 券商自营：证券公司以自有资金进行投资的交易。
+- 其他金融机构：如银行理财子公司、信托计划等。
+
+
+2. 游资识别：比较困难。
+
+- 方法1：通过同花顺桌面版，可以识别游资的营业部名称（可以识别主要游资席位）
+
+- 方法2：除机构外的营业部名称，都可识别为游资营业部
+
+
+同花顺桌面版游资席位识别。以下为人工手动整理得到的游资席位，并按照他们的操作特征进行了归类。
+
+### 抓取流程
+
+（1）通过同花顺桌面版游资席位识别。
+
+- 可以人工手动整理得到的游资席位，并按照操作特征进行了归类。
+
+（2）通过东方财富龙虎榜营业部排行公开网站（<https://data.eastmoney.com/stock/yybph.html>）。
+
+- 可以获取到游资的营业部信息（营业部名称、营业部代码）。
+
+（3）以东方财富的营业部代码为基准（`data/brokers-yybph.rds`），将游资营业部信息与游资席位信息进行匹配。
+
+- 匹配成功后，将游资席位信息与游资营业部信息进行合并，整理为json格式。  
+
+### 抓取代码
+
+- 手工整理json列表："data/large-actor.json"
+
+- 读取json列表："code/read-json-actor.R"
+
+- 导出的结果数据："data/large-actor.rds"
+
+### 数据集展示
+
+```{r}
+#| echo: false
+file_tar <- here("data/large-actor.rds")
+df_actor <- readRDS(file_tar)
+df_actor %>%
+  #select(category, name, id) %>%
+  DT::datatable(
+    caption = "机构和游资席位信息表",
+    options = list(
+      dom = 'tip',
+      pageLength = 10,
+      lengthChange = FALSE
+    )
+  )
+```
 
 
 ## 龙虎榜数据：每日龙虎榜个股名单（已执行）
@@ -160,8 +276,36 @@ fs::dir_tree(dir_tar, regexp = paste(basename(last_10_files), collapse = "|"))
 
 ### 抓取流程
 
-保存到`data/dragon-dpt/`
+- 采用Rselenium+docker方式进行抓取
+
+- 保存到`data/dragon-dpt/`
 
 ### 抓取代码
 
 "code/scrape-05-dragon-dpt.R"
+
+### 数据集展示
+
+```{r}
+#| label: fig-dragon-dpt-demo
+#| fig-cap: "每日活跃营业部数据集(2025-04-11)"
+#| echo: false
+file_tar <- here("data/dragon-dpt")
+# fs::dir_tree(file_tar)
+
+# 读取数据
+df_dpt_demo <- read_csv(here("data/dragon-dpt", "2025-04-11.csv"))
+# dim(df_dpt_demo)
+# 展示数据
+df_dpt_demo %>%
+  select(-`相关`) %>%
+  DT::datatable(
+    rownames = FALSE,
+    options = list(
+      dom = 'tip',
+      pageLength = 5,
+      lengthChange = FALSE,
+      scrollX = TRUE
+    )
+  )
+```

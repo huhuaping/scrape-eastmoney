@@ -16,8 +16,6 @@ library(jsonlite)
 # 读取游资数据 ----
 ## 游资列表以json格式存放
 json_file <- here("data", "large-actor.json")
-
-## 读取json文件，并转换为标准tibble格式
 ## 读取json文件，并转换为标准tibble格式
 df_actor <- jsonlite::fromJSON(json_file) %>%
   # 将嵌套的JSON结构展开为tibble
@@ -26,17 +24,22 @@ df_actor <- jsonlite::fromJSON(json_file) %>%
       portrait = x$portrait,
       # 展开actors列表
       bind_rows(x$actors) %>%
-        # 将department列表转为字符串
-        mutate(department = map(department, paste, collapse = ";"))
+        # 展开department列表为name和id
+        mutate(
+          # 将department中的name和id分别提取出来
+          department_info = map(department, bind_rows)
+        ) %>%
+        unnest(department_info)
     )
   }, .id = "category") %>%
   # 展开department为多行
   separate_rows(department, sep = ";")
 
-## 查看数据
-# df_actor %>%
-#   head() %>%
-#   View()
+
+# 检查数据结构
+View(df_actor)
+
+
 
 # 龙虎榜每日活跃营业部数据 ----
 
@@ -103,7 +106,46 @@ names_tar <- c(
 df_reduce <- df_tar %>%
   select(all_of(names_tar))
 
+### 处理营业部变量----
+### 清除营业部名称包含的如下情形
+### 1. 营业部名称中包含“证券股份有限公司”字样
+### 2. 营业部名称中包含“营业部”字样
+
+ptn_replace <- c(
+    "股份有限公司",
+    "有限责任公司",
+    "有限公司",
+    "证券营业部"
+    )
+
+df_dpt <- df_reduce %>%
+  mutate(
+    name_clean = str_replace_all(
+        name,
+        paste0(ptn_replace, collapse = "|"),
+        ""
+        )
+    ) %>%
+    select(date_file, name, name_clean, everything())
+
+### 替换营业部名称包含的特殊情形
+
+
+
+
+
 ## 查看数据
-# df_reduce %>%
-#   head() %>%
-#   View()
+df_dpt %>%
+  #head() %>%
+  View()
+
+# 数据匹配----
+
+## 匹配游资数据----
+df_reduce <- df_reduce %>%
+  left_join(df_actor, by = c("name" = "department"))
+
+## 查看数据
+df_reduce %>%
+  head() %>%
+  View()
