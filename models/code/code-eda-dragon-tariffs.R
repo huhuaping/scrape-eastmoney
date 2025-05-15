@@ -32,8 +32,7 @@ df_actor <- jsonlite::fromJSON(json_file) %>%
         unnest(department_info)
     )
   }, .id = "category") %>%
-  # 展开department为多行
-  separate_rows(department, sep = ";")
+  select(-department)
 
 
 # 检查数据结构
