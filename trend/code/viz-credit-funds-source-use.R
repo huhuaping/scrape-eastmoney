@@ -13,9 +13,9 @@ library(mgsub)
 
 # 读取历年数据----
 
-dir_data <- here("trend", "data")
+dir_data <- here("trend", "data", "credit-funds-source-use")
 
-list_data <- fs::dir_ls(dir_data, pattern = "raw-credit-funds-source-use-\\d{4}\\.xlsx")
+list_data <- fs::dir_ls(dir_data, pattern = "raw-\\d{4}\\.xlsx")
 
 # 采用循环语法读取历年数据
 

@@ -90,8 +90,8 @@ for (year in names(url_page_list)) {
     # View(table_clean)
 
     # 将数据保存为xlsx文件
-    file_tar <- glue("raw-credit-funds-source-use-{year}.xlsx")
-    path_tar <- here("trend", "data", file_tar)
+    file_tar <- glue("raw-year}.xlsx")
+    path_tar <- here("trend", "data", "credit-funds-source-use", file_tar)
     # 如果年份等于当前年份，则可以多次保存并覆盖同名xlsx文件
     # 如果年份小于当前年份，则只保存一次
     if (year == year_now) {
