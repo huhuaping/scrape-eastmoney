@@ -88,7 +88,7 @@ p_breath <- tbl_breath %>%
         strip.text = element_text(size = 12, face = "bold"),
         axis.title = element_text(face = "bold"),
         plot.title = element_text(hjust = 0.5, face = "bold"),
-        axis.text.x = element_text(hjust = 1)
+        axis.text.x = element_text(angle = 45, hjust = 5)
     ) +
     guides(color = guide_legend(override.aes = list(linewidth = 2)))
 
@@ -96,8 +96,52 @@ p_breath <- tbl_breath %>%
 # print(p_breath)
 
 # 保存图表
-ggsave(
-    here("trend/images/cdc_breath_disease_trend.png"),
-    p_breath,
-    width = 10, height = 8, dpi = 300
-)
+file_path <- here("trend", "images", "cdc_breath_disease_trend.png")
+## 如果文件已经存在，则跳过保存
+if (!file.exists(file_path)) {
+    ggsave(
+        file_path,
+        p_breath,
+        width = 10, height = 8, dpi = 300
+    )
+}
+
+# 绘制交互式plotly图表
+library(plotly)
+p_breath_plotly <-
+    ggplotly(p_breath) %>%
+    layout(
+        title = list(
+            text = "2024-2025年呼吸道病原体核酸检测阳性率趋势",
+            font = list(size = 18)
+        ),
+        xaxis = list(
+            # title = "年份-周次",
+            tickangle = 45
+        ),
+        # yaxis = list(title = "阳性率"),
+        hoverlabel = list(
+            bgcolor = "white",
+            font = list(size = 12)
+        ),
+        hovermode = "closest",
+        legend = list(
+            orientation = "v",
+            x = 1.05,
+            xanchor = "left",
+            y = 0.5,
+            yanchor = "middle"
+        )
+    ) %>%
+    config(
+        displayModeBar = TRUE,
+        modeBarButtonsToRemove = list(
+            "sendDataToCloud", "autoScale2d", "resetScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian"
+        ),
+        displaylogo = FALSE,
+        locale = "zh-CN"
+    )
+
+# 显示交互式图表
+# p_breath_plotly

@@ -33,6 +33,8 @@ website:
         text: "模型实现"
       - href: nav-scrape.qmd
         text: "数据获取"
+      - href: nav-trend.qmd
+        text: "趋势分析"
     right:
       - icon: stack-overflow
         text: "主站|Kevin Hu"
@@ -77,6 +79,14 @@ website:
         - scrape/01-bid-ask.qmd
         - scrape/02-deal-volume.qmd
 
+    - title: "趋势分析"
+      style: "docked"
+      #background: light
+      collapse-level: 2
+      contents:
+        - nav-trend.qmd
+        - trend/board-medical.qmd
+        - trend/board-credit-funds.qmd
 format:
   html:
     theme: [sandstone, scss/_variables.scss]

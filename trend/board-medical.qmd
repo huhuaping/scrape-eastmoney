@@ -1,0 +1,41 @@
+---
+title: "看板|医疗产业"
+author: "胡华平"
+format: dashboard
+---
+
+
+
+## Column {height=90%}
+
+```{r}
+#| title: "核酸检测阳性率（每周，%）"
+#| echo: false
+#| warning: false
+#| message: false
+library(here)
+script_path <- here("trend", "code", "viz-cdc-breath-disease.R")
+source(script_path)
+p_breath_plotly
+```
+
+
+```{r}
+#| title: "新冠重症病例数量（月度，例）"
+#| echo: false
+#| warning: false
+#| message: false
+script_path <- here("trend", "code", "viz-covid-trend.R")
+source(script_path)
+p_covid_plotly
+```
+
+
+## Row {height=10%}
+
+::: {.card}
+
+使用Quarto Dashboard技术围绕医疗产业话题展示相关趋势。
+
+> 数据来源：中国疾病预防控制中心 <https://www.chinacdc.cn/jksj/jksj04_14275/> 
+:::
