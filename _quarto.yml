@@ -40,6 +40,8 @@ website:
         text: "主站|Kevin Hu"
         href: https://www.huhuaping.com
         target: _blank
+      - href: tech/index.qmd
+        text: "技术总结"
         
   page-footer:
     left: "© Copyright 2023 Kevin Hu. Except where otherwise noted, all text and images licensed CC-BY-NC 4.0."
@@ -87,6 +89,14 @@ website:
         - nav-trend.qmd
         - trend/board-medical.qmd
         - trend/board-credit-funds.qmd
+
+    - title: "技术总结"
+      style: "docked"
+      collapse-level: 2
+      contents:
+        - tech/index.qmd
+        - tech/2026-03-19-web-scraping-architecture/index.qmd
+
 format:
   html:
     theme: [sandstone, scss/_variables.scss]

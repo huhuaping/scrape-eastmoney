@@ -1,0 +1,317 @@
+---
+title: "东方财富网站数据爬取技术架构与最佳实践"
+date: "2026-03-19"
+date-modified: "2026-03-19"
+description: "系统分析 scrape-eastmoney 项目中基于 Docker + RSelenium 的爬虫技术架构，探讨从桌面端到 Serverless 的演进方案，并给出 GitHub Actions 自动化部署的完整落地指南。"
+categories: [R爬虫, RSelenium, Docker, 东方财富, GitHub Actions, 自动化]
+---
+
+## 一、现有爬虫技术架构分析
+
+### 1.1 技术栈概览
+
+scrape-eastmoney 项目目前采用 **Docker + RSelenium** 技术栈实现东方财富网站的动态数据抓取。核心组件如下：
+
+| 组件 | 用途 | 备注 |
+|------|------|------|
+| **Docker** | 容器化 Selenium Chrome/Firefox | 需要 Docker Desktop GUI 启动 |
+| **RSelenium** | R 语言浏览器自动化 | 连接 remoteDriver 控制浏览器 |
+| **rvest** | HTML 解析与表格提取 | 解析动态加载后的页面 |
+| **tidyverse** | 数据清洗与处理 | 管道式数据流处理 |
+
+### 1.2 脚本体系（scrape-01 ~ scrape-05）
+
+项目包含 5 个核心爬虫脚本，分别对应不同的数据源：
+
+| 脚本 | 数据集 | 目标URL | 状态 |
+|------|--------|---------|------|
+| `scrape-01-deal-flow.R` | 个股挂单数据 | `quote.eastmoney.com/f1.html` | ⚠️ 待完善 |
+| `scrape-02-funds-flow.R` | 资金流数据 | `data.eastmoney.com/zjlx/detail.html` | ⚠️ 待完善 |
+| `scrape-03-limit-updown.R` | 涨跌停股池 | `quote.eastmoney.com/ztb/detail` | ⚠️ 待完善 |
+| `scrape-04-dragon-pool.R` | 龙虎榜日度 | `data.eastmoney.com/stock/tradedetail.html` | ✅ 成熟 |
+| `scrape-05-dragon-dpt.R` | 每日活跃营业部 | `data.eastmoney.com/stock/hyyyb.html` | ✅ 成熟 |
+
+### 1.3 统一工作流模式
+
+所有脚本遵循相同的技术路径：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. 启动 Docker 容器（手动）                                 │
+│     docker run --name chrome -p 4445:4444 -p 5901:5900     │
+│     selenium/standalone-chrome-debug:latest                │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  2. RSelenium 连接远程浏览器                                 │
+│     remDr <- remoteDriver(                                 │
+│       remoteServerAddr = "localhost",                       │
+│       port = 5555L,                                         │
+│       browserName = "chrome"                                │
+│     )                                                       │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  3. 导航 → 等待 → 获取页面源码 → rvest 解析                │
+│     remDr$navigate(url)                                    │
+│     page_source <- remDr$getPageSource()                   │
+│     html <- read_html(page_source)                         │
+│     tables <- html_table(html)                              │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  4. 翻页循环 → 数据合并 → CSV 保存                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 二、现有方案的痛点分析
+
+### 2.1 人工介入环节
+
+| 环节 | 问题 | 频率 |
+|------|------|------|
+| Docker Desktop 启动 | 需要 GUI 点击，占用资源 | 每次 |
+| docker run 命令 | 手动执行，无法定时 | 每次 |
+| 容器监控 | 需人工确认运行状态 | 每次 |
+| 异常处理 | 元素定位失败需人工介入 | 随机 |
+
+### 2.2 环境依赖
+
+- **Windows 宿主机**：必须运行 Windows 并安装 Docker Desktop
+- **本地浏览器**：依赖宿主机 Chrome/Firefox
+- **端口占用**：4444/5555 端口可能被占用
+
+---
+
+## 三、演进方案对比
+
+### 方案 1：本地无头浏览器（短期 ⭐）
+
+直接使用 R 的无头浏览器包，摆脱 Docker 依赖：
+
+```r
+# 方案 A: chromote (轻量级，推荐)
+library(chromote)
+b <- Chromote$new()
+b$goto("https://data.eastmoney.com/zjlx/detail.html")
+html <- b$get_page()$result
+
+# 方案 B: RSelenium headless 模式
+remDr <- remoteDriver(
+  remoteServerAddr = "localhost",
+  port = 4444,
+  browserName = "chrome",
+  extraCapabilities = list(
+    chromeOptions = list(args = list("--headless", "--no-sandbox"))
+  )
+)
+```
+
+**优点：** 无需 Docker，完全后台运行  
+**缺点：** 依赖本地 Chrome/Edge 安装
+
+### 方案 2：Docker 后台运行（中期 ⭐⭐）
+
+将 Docker 作为系统服务长期运行：
+
+```bash
+# 首次启动（后台）
+docker run -d --name selenium-scraper \
+  -p 4444:4444 -p 7900:7900 \
+  selenium/standalone-chrome:latest
+
+# 定时任务调用
+# Windows: Task Scheduler
+# Linux: cron
+0 16 * * * /usr/bin/Rscript /path/to/scrape-02-funds-flow.R
+```
+
+**优点：** 环境隔离，可定时任务  
+**缺点：** 仍需维护 Docker 容器
+
+### 方案 3：GitHub Actions Serverless（长期 ⭐⭐⭐）
+
+利用 GitHub Actions 的云端计算资源实现无人值守：
+
+```yaml
+# .github/workflows/scrape.yml
+name: Scrape Funds Flow
+on:
+  schedule:
+    - cron: '0 16 * * *'  # 每天下午4点
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        
+      - name: Install dependencies
+        run: |
+          Rscript -e 'install.packages(c("RSelenium", "rvest", "tidyverse"))'
+          
+      - name: Run scraper
+        run: Rscript code/scrape-02-funds-flow.R
+        env:
+          DEBUG: 'false'
+          
+      - name: Upload data
+        uses: actions/upload-artifact@v4
+        with:
+          name: funds-flow-data
+          path: data/funds-flow/
+          
+      - name: Commit data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update funds flow data"
+          file_pattern: "data/*.csv"
+```
+
+---
+
+## 四、GitHub Actions 调试策略
+
+### 4.1 失败保留证据
+
+当爬虫失败时，需要保留现场便于人工排查：
+
+```yaml
+- name: Upload artifacts on failure
+  if: failure()
+  uses: actions/upload-artifact@v4
+  with:
+    name: debug-screenshots
+    path: |
+      debug/*.png
+      debug/*.html
+```
+
+### 4.2 脚本内置调试开关
+
+```r
+# 调试开关：通过环境变量控制
+DEBUG <- Sys.getenv("DEBUG", "false") == "true"
+
+# 核心抓取逻辑
+tryCatch({
+  # ... 抓取逻辑 ...
+  
+  if (DEBUG) {
+    # 保存页面截图
+    remDr$screenshot(file = glue("debug/{stock_id}_{Sys.time()}.png"))
+    # 保存 HTML 源码
+    writeLines(page_source, glue("debug/{stock_id}_{Sys.time()}.html"))
+  }
+  
+}, error = function(e) {
+  # 发生错误时保存现场
+  if (DEBUG) {
+    remDr$screenshot(file = glue("debug/error_{Sys.time()}.png"))
+  }
+  stop(e)
+})
+```
+
+**触发方式：**
+```bash
+# 本地调试
+DEBUG=true Rscript scrape-02-funds-flow.R
+
+# GitHub Actions
+env:
+  DEBUG: 'true'
+```
+
+---
+
+## 五、完整工作流设计
+
+### 5.1 开发-测试-生产三阶段
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  开发阶段（本地）                                               │
+│  1. 修改 R 脚本                                                │
+│  2. DEBUG=true 本地运行测试                                     │
+│  3. 成功 → 推送至 main                                          │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  CI 阶段（PR 自动触发）                                         │
+│  1. 创建 PR                                                     │
+│  2. GitHub Actions 自动运行                                     │
+│  3. 失败 → 下载 Artifact 人工排查                               │
+│  4. 成功 → 自动合并                                             │
+└────────────────────────┬────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  生产阶段（定时任务）                                           │
+│  1. 每日定时触发（如 16:00）                                    │
+│  2. 运行抓取脚本                                                │
+│  3. 成功 → 自动 commit 数据 → Push                             │
+│  4. 失败 → 发送通知 + 保存 Artifact                             │
+│  5. 人工下载调试 → 本地修复 → 推送                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 失败通知配置
+
+```yaml
+- name: Notify on failure
+  if: failure()
+  uses: slackapi/slack-github-action@v1.25.0
+  with:
+    payload: |
+      {
+        "text": "🚨 Scrape Failed",
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Scrape Job Failed*"
+            }
+          }
+        ]
+      }
+    channel-id: 'YOUR_CHANNEL_ID'
+  env:
+    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+---
+
+## 六、总结与建议
+
+### 6.1 方案选型建议
+
+| 阶段 | 方案 | 适用场景 | 工作量 |
+|------|------|----------|--------|
+| **短期** | 本地 chromote | 个人使用、快速验证 | ⭐ |
+| **中期** | Docker 后台 + 定时任务 | 团队使用、需要隔离 | ⭐⭐ |
+| **长期** | GitHub Actions | 生产环境、无人值守 | ⭐⭐⭐ |
+
+### 6.2 核心原则
+
+1. **调试先行**：所有脚本内置 DEBUG 开关，确保可复现
+2. **证据保全**：失败时自动保存截图/HTML
+3. **渐进演进**：从本地运行 → Docker 后台 → Serverless
+4. **双轨机制**：沿用 funds-mode 项目的双轨制，快速通道自动合并，严格通道人工审核
+
+### 6.3 下一步行动
+
+- [ ] 将 `scrape-04-dragon-pool.R` 改造为无头浏览器版本
+- [ ] 添加 DEBUG 调试开关
+- [ ] 创建 `.github/workflows/scrape.yml`
+- [ ] 配置失败通知（Slack/Email）
+
+---
+
+*本文为 scrape-eastmoney 项目技术总结系列第一篇，后续将陆续更新各模块的技术实现细节。*
